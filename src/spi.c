@@ -20,7 +20,7 @@ void spi_init(void)
 	RCC_APB1PeriphClockCmd(LCD_SPI_CLK, ENABLE);
 
 	// piny SPI
-	GPIO_InitStructure.GPIO_Pin = LCD_SCK_PIN | LCD_MOSI_PIN | LCD_MISO_CLK;
+	GPIO_InitStructure.GPIO_Pin = LCD_SCK_PIN | LCD_MOSI_PIN | LCD_MISO_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(LCD_SCK_PORT, &GPIO_InitStructure);
@@ -34,7 +34,7 @@ void spi_init(void)
 	SPI_I2S_DeInit(LCD_SPI);
 
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+	SPI_InitStructure.SPI_Mode = SPI_Mode_Slave;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
@@ -54,6 +54,8 @@ void spi_init(void)
 	while (SPI_I2S_GetFlagStatus(LCD_SPI, SPI_I2S_FLAG_TXE) == RESET)
 	{}
 	SPI_I2S_ReceiveData(LCD_SPI);
+
+	SPI_Cmd(LCD_SPI, DISABLE); /* LCD_SPI disable */
 #endif
 }
 

@@ -80,12 +80,6 @@ void camera_config(void)
 	ov7670_setRes(QVGA);
 	ov7670_setColorSpace(RGB565);
 	camera_WriteReg(REG_CLKRC, 1);	// podil by nemel byt delitel frekvence, zde 1
-
-	// zalozeni ulohy cteni obrazu
-	if(Scheduler_Add_Task(camera_get_image, 0, (SCHEDULERPERIOD * 500 MILISEKUND)) == SCH_MAX_TASKS)
-	{
-		// chyba pri zalozeni service
-	}
 }
 
 void camera_get_image(void)
@@ -93,6 +87,8 @@ void camera_get_image(void)
 	//
 	// priprava DMA pro SPI
 	//
+	SPI_Cmd(LCD_SPI, ENABLE); /* LCD_SPI enable */
+
 	DMA_InitTypeDef DMA_InitStructure;
 	RCC_AHBPeriphClockCmd(LCDDMACLK, ENABLE);
 	DMA_DeInit(LCDSPI_CHANNEL);
@@ -109,88 +105,70 @@ void camera_get_image(void)
 	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 	DMA_Init(LCDSPI_CHANNEL, &DMA_InitStructure);
 
-	//
-	// displej priprava zapisu
-	//
-	// Set column range.
-	send_instruction(ILI9341_CASET);
-	send_data16(0x0000);					// start column
-	send_data16((uint16_t)(319));			// end column
-	// Set row range.
-	send_instruction(ILI9341_PASET);
-	send_data16(0x0000);					// start line
-	send_data16((uint16_t)(239));			// end line
-
-	// Set 'write to RAM'
-	send_instruction(ILI9341_RAMWR);
-
-	CS_low();
-	DC_data(); 											// DC = H
-
 	__disable_irq();
 
-	//while (1)
-	//{
-		// cekej na VSYNC
-		while (!(GPIOA->IDR & GPIO_Pin_9))
+	// cekej na VSYNC
+	while (!(GPIOA->IDR & GPIO_Pin_9))
+	{}
+	while ((GPIOA->IDR & GPIO_Pin_9))
+	{}
+
+	uint32_t x, y;
+	uint8_t *p_8bit;
+
+	y = 240;
+	while (y--)
+	{
+		// cekej na HREF
+		while ((GPIOA->IDR & GPIO_Pin_8))
 		{}
-		while ((GPIOA->IDR & GPIO_Pin_9))
+		while (!(GPIOA->IDR & GPIO_Pin_8))
 		{}
 
-		uint32_t x, y;
-		uint8_t *p_8bit;
+		p_8bit = rowdata;
 
-		y = 240;
-		while (y--)
+		//DEBUG_PORT->ODR |= DEBUG_PIN;
+		x = 320;		// priprava zapisu do radkove pameti
+		while(x--)
 		{
-			// cekej na HREF
-			while ((GPIOA->IDR & GPIO_Pin_8))
+			// cekej na PCLK
+			while ((GPIOA->IDR & GPIO_Pin_10))
 			{}
-			while (!(GPIOA->IDR & GPIO_Pin_8))
+			while (!(GPIOA->IDR & GPIO_Pin_10))
 			{}
+			*(p_8bit++) = GPIOA->IDR;
 
-			p_8bit = rowdata;
-
-			//DEBUG_PORT->ODR |= DEBUG_PIN;
-			x = 320;		// priprava zapisu do radkove pameti
-			while(x--)
-			{
-				// cekej na PCLK
-				while ((GPIOA->IDR & GPIO_Pin_10))
-				{}
-				while (!(GPIOA->IDR & GPIO_Pin_10))
-				{}
-				*(p_8bit++) = GPIOA->IDR;
-
-				// cekej na dalsi PCLK
-				while ((GPIOA->IDR & GPIO_Pin_10))
-				{}
-				while (!(GPIOA->IDR & GPIO_Pin_10))
-				{}
-				*(p_8bit++) = GPIOA->IDR;
-			}
-			//DEBUG_PORT->ODR &= ~DEBUG_PIN;
-
-			// odeslani dat v blank intervalu
-			LCDSPI_CHANNEL->CMAR = (uint32_t)rowdata;
-			LCDSPI_CHANNEL->CNDTR = ROWDATASIZE;
-			LCDSPI_CHANNEL->CCR |= DMA_CCR1_EN;				// DMA1CH5 enable
-			LCD_SPI->CR2 |= SPI_I2S_DMAReq_Tx;				// SPI2 DMA TX enable
-			while (!DMA_GetFlagStatus(DMA1_FLAG_TC5));
-			DMA_ClearFlag(DMA1_FLAG_TC5);
-			DMA_ClearFlag(DMA1_IT_GL5 | DMA1_IT_TC5 | DMA1_IT_HT5 | DMA1_IT_TE5);
-			while (SPI_I2S_GetFlagStatus(LCD_SPI, SPI_I2S_FLAG_BSY));
-			LCDSPI_CHANNEL->CCR &= (uint16_t)(~DMA_CCR1_EN);// DMA1CH5 enable
-			LCD_SPI->CR2 &= (uint16_t)~SPI_I2S_DMAReq_Tx;	// SPI2 DMA TX disable
-			/*
-			for (i = 0; i < 640; i++)
-			{
-				SPI_Write8(rowdata[i]);
-			}
-			*/
+			// cekej na dalsi PCLK
+			while ((GPIOA->IDR & GPIO_Pin_10))
+			{}
+			while (!(GPIOA->IDR & GPIO_Pin_10))
+			{}
+			*(p_8bit++) = GPIOA->IDR;
 		}
-	//}
-	CS_high();
+		//DEBUG_PORT->ODR &= ~DEBUG_PIN;
+
+		// oznaceni platneho radku
+		sensor_line_ready(TRUE);
+
+		// odeslani dat v blank intervalu
+		LCDSPI_CHANNEL->CMAR = (uint32_t)rowdata;
+		LCDSPI_CHANNEL->CNDTR = ROWDATASIZE;
+		LCDSPI_CHANNEL->CCR |= DMA_CCR1_EN;				// DMA1CH5 enable
+		LCD_SPI->CR2 |= SPI_I2S_DMAReq_Tx;				// SPI2 DMA TX enable
+
+		while (!DMA_GetFlagStatus(DMA1_FLAG_TC5));
+		DMA_ClearFlag(DMA1_FLAG_TC5);
+		DMA_ClearFlag(DMA1_IT_GL5 | DMA1_IT_TC5 | DMA1_IT_HT5 | DMA1_IT_TE5);
+		while (SPI_I2S_GetFlagStatus(LCD_SPI, SPI_I2S_FLAG_BSY));
+		LCDSPI_CHANNEL->CCR &= (uint16_t)(~DMA_CCR1_EN);// DMA1CH5 enable
+		LCD_SPI->CR2 &= (uint16_t)~SPI_I2S_DMAReq_Tx;	// SPI2 DMA TX disable
+
+		// konec platnosti radku
+		sensor_line_ready(FALSE);
+	}
+
+	SPI_Cmd(LCD_SPI, DISABLE); /* LCD_SPI disable */
+
 	__enable_irq();
 
 }

@@ -13,6 +13,7 @@
 #include "leds.h"
 #include "scheduler.h"
 #include "application.h"
+#include "camera.h"
 //#include "usart.h"
 //#include "commands.h"
 
@@ -29,5 +30,6 @@
 // sluzby
 void LED_service(void);
 void Delay_service(void);
+void Camera_get_image_service(void);
 
 #endif /* INCLUDES_SERVICES_H_ */

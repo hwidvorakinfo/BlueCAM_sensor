@@ -24,6 +24,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
 #include "scheduler.h"
+#include "services.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -158,6 +159,21 @@ void SysTick_Handler(void)
 /**
   * @}
   */ 
+
+void EXTI15_10_IRQHandler(void)
+{
+  if(EXTI_GetITStatus(EXTI_Line12) != RESET)
+  {
+    // zaloz ulohu pro vyslani obrazku
+	if(Scheduler_Add_Task(Camera_get_image_service, 0, 0) == SCH_MAX_TASKS)
+	{
+		// chyba pri zalozeni service
+	}
+
+    /* Clear the  EXTI line 12 pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line12);
+  }
+}
 
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

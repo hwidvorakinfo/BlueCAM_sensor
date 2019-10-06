@@ -52,25 +52,27 @@
 #define GPIOB_INIT
 #ifdef GPIOB_INIT
 #define OUT_PORT_B				GPIOB
-//#define LCD_DC_PORT				OUT_PORT_B
-//#define LCD_DC_PIN				GPIO_Pin_14
-#define LCD_CS_PORT				OUT_PORT_B
-#define LCD_CS_PIN				GPIO_Pin_12
+#define LEDRUN_PORT				OUT_PORT_B
+#define LEDRUN_PIN				GPIO_Pin_8
+#define LEDDET_PORT				OUT_PORT_B
+#define LEDDET_PIN				GPIO_Pin_9
 
-#define OUT_PORT_B_OUTPUTS		LCD_CS_PIN
-//#define GPIOB_RESET_INIT
-	#define OUT_PORT_B_RESET_INIT	0
+#define OUT_PORT_B_OUTPUTS		LEDRUN_PIN | LEDDET_PIN
+#define GPIOB_RESET_INIT
+	#define OUT_PORT_B_RESET_INIT	LEDRUN_PIN
 #define GPIOB_SET_INIT
-	#define OUT_PORT_B_SET_INIT		LCD_CS_PIN
+	#define OUT_PORT_B_SET_INIT		LEDDET_PIN
 #endif
 
 // vystupy na PCx
-#define GPIOC_INIT
+//#define GPIOC_INIT
 #ifdef GPIOC_INIT
 #define OUT_PORT_C				GPIOC
-#define LED_PORT				OUT_PORT_C
-#define LED_PIN					GPIO_Pin_13
-#define OUT_PORT_C_OUTPUTS		LED_PIN
+//#define LED_PORT				OUT_PORT_C
+//#define LED_PIN				GPIO_Pin_13
+
+#define OUT_PORT_C_OUTPUTS		0
+
 //#define GPIOC_RESET_INIT
 //	#define OUT_PORT_C_RESET_INIT	LEDG_PIN
 //#define GPIOC_SET_INIT
@@ -124,17 +126,15 @@
 #endif
 
 // vstupy na PBx
-//#define GPIOB_INPUT
+#define GPIOB_INPUT
 #ifdef GPIOB_INPUT
 #define IN_PORT_B				GPIOB
-#define NTCFAULT_PORT			IIN_PORT_B
-#define Z_MIN_PORT				IN_PORT_B
-#define NTCFAULT_PIN			GPIO_Pin_8
-#define Z_MIN_PIN				GPIO_Pin_12
-#define MAXTEMP_PORT			IN_PORT_B
-#define MAXTEMP_PIN				GPIO_Pin_9
+#define LCD_CS_PORT				IN_PORT_B
+#define LCD_CS_PIN				GPIO_Pin_12
+#define LCD_CS_PORTSOURCE		GPIO_PortSourceGPIOB
+#define LCD_CS_PINSOURCE		GPIO_PinSource12
 
-#define IN_PORT_B_INPUTS		NTCFAULT_PIN | Z_MIN_PIN | MAXTEMP_PIN
+#define IN_PORT_B_INPUTS		LCD_CS_PIN
 #endif
 
 // vstupy na PCx

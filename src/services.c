@@ -13,14 +13,14 @@ void LED_service(void)
 {
 	uint16_t led_port;
 
-	led_port = GPIO_ReadOutputData(LED_PORT);
-	if (led_port & LED_PIN)
+	led_port = GPIO_ReadOutputData(LEDRUN_PORT);
+	if (led_port & LEDRUN_PIN)
 	{
-		GPIO_ResetBits(LED_PORT, LED_PIN);				// zelena LED on
+		GPIO_ResetBits(LEDRUN_PORT, LEDRUN_PIN);				// zelena LED on
 	}
 	else
 	{
-		GPIO_SetBits(LED_PORT, LED_PIN);					// zelena LED off
+		GPIO_SetBits(LEDRUN_PORT, LEDRUN_PIN);					// zelena LED off
 	}
 }
 
@@ -51,4 +51,9 @@ void Heartbeat_service(void)
 	usart_send_text((uint8_t *)&text);				// odesli zpravu AL
 	usart_newline();
 #endif
+}
+
+void Camera_get_image_service(void)
+{
+	camera_get_image();
 }

@@ -25,6 +25,7 @@
 #include "ili9341.h"
 #include "mcuperipherals.h"
 #include "camera.h"
+#include "sensor.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -58,7 +59,7 @@ int main(void)
 
 	mcuperipherals_init();
 	leds_config();										// blikání zelenou ledkou
-	lcd_config();										// inicializace displeje
+	sensor_config();									// nastaveni sensoru
 	camera_config();
 
 	while (1)
